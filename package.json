@@ -1,0 +1,33 @@
+{
+	"name": "waktoo",
+	"version": "1.0.0",
+	"description": "A lightweight, modern, Moment-style date-time library with timezone, locale, arithmetic, durations, and relative time. Zero dependencies. Fast. Chainable. Universal.",
+	"type": "commonjs",
+	"main": "./index.cjs",
+	"module": "./index.mjs",
+	"exports": {
+		".": {
+			"require": "./index.cjs",
+			"import": "./index.mjs"
+		}
+	},
+	"scripts": {
+		"test": "jest"
+	},
+	"keywords": [
+		"date",
+		"moment",
+		"timezone",
+		"locale",
+		"duration",
+		"calendar",
+		"relative",
+		"datetime",
+		"waktoo",
+		"momentjs-alternative"
+	],
+	"license": "MIT",
+	"devDependencies": {
+		"jest": "^30.2.0"
+	}
+}

@@ -119,7 +119,9 @@ class Waktoo {
   }
 
   // -------- formatting (format returns string directly) --------
-  format(pattern) {
+  format(pattern = null) {
+    if (!pattern) return this._raw;
+
     const parts = this._tzService.getParts(this._raw, this._tz);
     const loc = this._localeProvider.getPack();
     return this._formatter.format(pattern, parts, loc, this._tz, this._raw);

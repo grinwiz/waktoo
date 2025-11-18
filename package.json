@@ -1,6 +1,6 @@
 {
 	"name": "waktoo",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"description": "A lightweight, modern, Moment-style date-time library with timezone, locale, arithmetic, durations, and relative time. Zero dependencies. Fast. Chainable. Universal.",
 	"type": "commonjs",
 	"main": "./index.cjs",

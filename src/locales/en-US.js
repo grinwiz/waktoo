@@ -32,6 +32,19 @@ module.exports = {
       months: n => `in ${n} months`,
       year: "in 1 year",
       years: n => `in ${n} years`
+    },
+    none: {
+      seconds: "a few seconds",
+      minute: "1 minute",
+      minutes: n => `${n} minutes`,
+      hour: "1 hour",
+      hours: n => `${n} hours`,
+      day: "1 day",
+      days: n => `${n} days`,
+      month: "1 month",
+      months: n => `${n} months`,
+      year: "1 year",
+      years: n => `${n} years`
     }
   },
 
@@ -42,5 +55,22 @@ module.exports = {
     nextWeek: (weekday, time) => `${weekday} at ${time}`,
     lastWeek: (weekday, time) => `${weekday} at ${time}`,
     sameElse: (date) => date
+  },
+
+  units: {
+    year: "year",
+    years: "years",
+    month: "month",
+    months: "months",
+    week: "week",
+    weeks: "weeks",
+    day: "day",
+    days: "days",
+    hour: "hour",
+    hours: "hours",
+    minute: "minute",
+    minutes: "minutes",
+    second: "second",
+    seconds: "seconds"
   }
 };

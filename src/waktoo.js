@@ -6,17 +6,22 @@ const Arithmetic = require('./core/Arithmetic');
 const DurationFactory = require('./core/DurationFactory');
 const RelativeCalendar = require('./core/RelativeCalendar');
 
+const {
+  diffCalendar,
+  calendarUnitCount,
+  formatDetailed,
+  formatSingleUnit
+} = require('./core/Range');
+
+const { AgeResult, humanizeAge } = require('./core/Age');
+
 class Waktoo {
   constructor(dateInput = null, config = {}) {
-    // strict ON by default
     const strict = config.strict === undefined ? true : !!config.strict;
-    this._raw = DateParser.parse(dateInput, strict);
-
     this._locale = config.locale || "en-US";
     this._tz = config.tz || null;
     this._strict = strict;
 
-    // services (dependencies)
     this._localeProvider = new LocaleProvider(this._locale);
     this._tzService = new TimeZoneService();
     this._formatter = new Formatter();
@@ -24,7 +29,6 @@ class Waktoo {
     this._raw = DateParser.parse(dateInput, strict, config.format || null);
   }
 
-  // immutable clone with changes
   _clone(changes = {}) {
     const cfg = {
       strict: this._strict,
@@ -33,12 +37,13 @@ class Waktoo {
       ...changes
     };
     const inst = new Waktoo(this._raw, cfg);
-    // copy the raw but if changes.raw provided, use it
-    if (changes.raw instanceof Date) inst._raw = new Date(changes.raw.getTime());
+    if (changes.raw instanceof Date) {
+      inst._raw = new Date(changes.raw.getTime());
+    }
     return inst;
   }
 
-  // -------- chaining mutators (return new instance) --------
+  // ------------ chaining mutators ------------
   tz(tzName) {
     return this._clone({ tz: tzName });
   }
@@ -51,21 +56,19 @@ class Waktoo {
     return this._clone({ strict: !!flag });
   }
 
-  // -------- moment-like getters (use timezone effects) --------
+  // ------------ getters (timezone-aware) ------------
   _parts() {
     return this._tzService.getParts(this._raw, this._tz);
   }
 
   year(val) {
     if (val === undefined) return this._parts().year;
-    // set year -> return new instance
     const d = new Date(this._raw.getTime());
     d.setFullYear(val);
     return this._clone({ raw: d });
   }
 
   month(val) {
-    // getter returns 0-11 to match moment? Moment's .month() returns 0-11.
     if (val === undefined) return this._parts().monthIndex;
     const d = new Date(this._raw.getTime());
     d.setMonth(val);
@@ -80,7 +83,6 @@ class Waktoo {
   }
 
   day() {
-    // moment's day() returns day of week (0 - Sunday)
     return this._parts().weekdayIndex;
   }
 
@@ -105,7 +107,7 @@ class Waktoo {
     return this._clone({ raw: d });
   }
 
-  // -------- toDate / toISOString / valueOf --------
+  // ------------ conversions ------------
   toDate() {
     return new Date(this._raw.getTime());
   }
@@ -118,16 +120,15 @@ class Waktoo {
     return this._raw.getTime();
   }
 
-  // -------- formatting (format returns string directly) --------
+  // ------------ formatting ------------
   format(pattern = null) {
     if (!pattern) return this._raw;
-
     const parts = this._tzService.getParts(this._raw, this._tz);
     const loc = this._localeProvider.getPack();
     return this._formatter.format(pattern, parts, loc, this._tz, this._raw);
   }
 
-  // -------- arithmetic (add/subtract) --------
+  // ------------ arithmetic ------------
   add(amount, unit) {
     const newDate = Arithmetic.add(this._raw, amount, unit);
     return this._clone({ raw: newDate });
@@ -138,18 +139,21 @@ class Waktoo {
     return this._clone({ raw: newDate });
   }
 
-  // diff: other can be Waktoo or date-like
   diff(other = Date.now(), unit = "ms", asFloat = false) {
-    const otherDate = other && typeof other === "object" && other._raw instanceof Date ? other._raw : DateParser.parse(other, false);
+    const otherDate =
+      other && typeof other === "object" && other._raw instanceof Date
+        ? other._raw
+        : DateParser.parse(other, false);
+
     return Arithmetic.diff(this._raw, otherDate, unit, asFloat);
   }
 
-  // -------- durations (factory) --------
+  // ------------ durations ------------
   static duration(a, b) {
     return DurationFactory.create(a, b);
   }
 
-  // -------- relative time --------
+  // ------------ relative ------------
   fromNow(withSuffix = true) {
     const now = new Waktoo();
     return RelativeCalendar.from(this, now, this._localeProvider.getPack(), withSuffix);
@@ -160,10 +164,60 @@ class Waktoo {
     return RelativeCalendar.from(this, otherInst, this._localeProvider.getPack(), withSuffix);
   }
 
-  // full calendar (like moment.calendar())
   calendar(reference = new Waktoo()) {
     const refInst = reference && reference._raw instanceof Date ? reference : new Waktoo(reference);
     return RelativeCalendar.calendar(this, refInst, this._localeProvider.getPack());
+  }
+
+  // ------------ NEW: range() ------------
+  range(date2, unit) {
+    const other = date2 instanceof Waktoo ? date2._raw : new Date(date2);
+    const start = this._raw < other ? this._raw : other;
+    const end   = this._raw < other ? other : this._raw;
+
+    const localePack = this._localeProvider.getPack(this._locale);
+
+    // unit-based output
+    if (unit) {
+      const u = unit.toLowerCase();
+
+      // ms-based units
+      if (["second","minute","hour","day","week"].includes(u)) {
+        const msTable = {
+          second: 1000,
+          minute: 60000,
+          hour:   3600000,
+          day:    86400000,
+          week:   604800000
+        };
+        const diff = Math.floor(Math.abs(end - start) / msTable[u]);
+        return formatSingleUnit(diff, u, localePack);
+      }
+
+      // calendar units (month/year)
+      if (["month","year"].includes(u)) {
+        const count = calendarUnitCount(start, end, this._tzService, this._tz, u);
+        return formatSingleUnit(count, u, localePack);
+      }
+    }
+
+    // detailed breakdown
+    const parts = diffCalendar(start, end, this._tzService, this._tz);
+    return formatDetailed(parts, localePack);
+  }
+
+  // ------------ NEW: age() ------------
+  age() {
+    const now = new Date();
+
+    const start = this._raw < now ? this._raw : now;
+    const end   = this._raw < now ? now : this._raw;
+
+    const parts = diffCalendar(start, end, this._tzService, this._tz);
+    const localePack = this._localeProvider.getPack(this._locale);
+
+    const value = humanizeAge(parts, localePack);
+    return new AgeResult(value, this._raw, now, this._tzService, this._tz);
   }
 }
 
@@ -172,10 +226,7 @@ function waktoo(dateInput, config) {
   return new Waktoo(dateInput, config || {});
 }
 
-// expose Duration factory convenience
 waktoo.duration = DurationFactory.create;
-
-// expose constructor class if needed
 waktoo.Waktoo = Waktoo;
 
 module.exports = waktoo;

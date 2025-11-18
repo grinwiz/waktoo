@@ -32,6 +32,19 @@ module.exports = {
       months: n => `dalam ${n} bulan`,
       year: "dalam 1 tahun",
       years: n => `dalam ${n} tahun`
+    },
+    none: {
+      seconds: "beberapa detik",
+      minute: "1 menit",
+      minutes: n => `${n} menit`,
+      hour: "1 jam",
+      hours: n => `${n} jam`,
+      day: "1 hari",
+      days: n => `${n} hari`,
+      month: "1 bulan",
+      months: n => `${n} bulan`,
+      year: "1 tahun",
+      years: n => `${n} tahun`
     }
   },
 
@@ -42,5 +55,22 @@ module.exports = {
     nextWeek: (weekday, time) => `${weekday} pukul ${time}`,
     lastWeek: (weekday, time) => `${weekday} pukul ${time}`,
     sameElse: (date) => date
+  },
+
+  units: {
+    year: "tahun",
+    years: "tahun",
+    month: "bulan",
+    months: "bulan",
+    week: "minggu",
+    weeks: "minggu",
+    day: "hari",
+    days: "hari",
+    hour: "jam",
+    hours: "jam",
+    minute: "menit",
+    minutes: "menit",
+    second: "detik",
+    seconds: "detik"
   }
 };
